@@ -1,6 +1,7 @@
 from tqdm.auto import tqdm
 import requests
 import zipfile
+import tarfile
 import argparse
 import shutil
 import os
@@ -17,6 +18,7 @@ _current_path = os.getcwd()
 _tmp = _current_path + '\\tmp\\'
 
 def clear(path, temp=True):
+    print('Cleaning up temporary files...')
     if temp and os.path.exists(_tmp):
         shutil.rmtree(_tmp)
 
@@ -26,14 +28,20 @@ def clear(path, temp=True):
 
 
 def move(path, extension, limiter):
+    print('Moving and filtering files...')
     for filename in glob.iglob(f'{path}**\\*.{extension}', recursive=True):
         if limiter in filename or limiter is None:
             os.replace(filename, path + filename.split('\\')[-1])
 
-def extract(path_zip, path_extract):
+def extract_zip(path_zip, path_extract):
     with zipfile.ZipFile(path_zip, 'r') as _zip:
         for element in tqdm(_zip.infolist(), desc=f'Extracting {path_zip}'):
             _zip.extract(element, path_extract)
+
+def extract_tar(path_tar, path_extract):
+    with tarfile.open(path_tar, 'r:gz') as _tar:
+        for element in tqdm(iterable=_tar.getmembers(), total=len(_tar.getmembers()), desc=f'Extracting {path_tar}'):
+            _tar.extract(member=element, path=path_extract)
 
 def download(url):
     if not os.path.exists(_tmp):
@@ -57,8 +65,17 @@ if __name__ == '__main__':
     if "'" in _lim:
         _lim = _lim.replace("'", '')
 
-    _path = f'{_current_path}\\{_type}\\'
-    _zip = download(_url)
-    extract(_zip, _path)
-    move(_path, _ext, _lim)
-    clear(_path)
+    try:
+        _path = f'{_current_path}\\{_type}\\'
+        _zip = download(_url)
+        extract_zip(_zip, _path)
+
+        for filename in glob.iglob(f'{_path}**\\*.tar.gz', recursive=True):
+            extract_tar(filename, _path)
+
+        move(_path, _ext, _lim)
+        clear(_path)
+        
+        print('Creation of the finished image set!')
+    except Exception as e:
+        print(f'Error: {e}')
