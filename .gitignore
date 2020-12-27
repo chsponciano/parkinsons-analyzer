@@ -132,3 +132,4 @@ dmypy.json
 *.zip
 data/tmp
 data/**/*.png
+data/**/*.mp4
