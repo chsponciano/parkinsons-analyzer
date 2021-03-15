@@ -129,7 +129,4 @@ dmypy.json
 .pyre/
 
 .vscode/
-*.zip
-data/tmp
-data/**/*.png
-data/**/*.mp4
+data
